@@ -1,6 +1,14 @@
 # Code Studio
 
-A VS Code-style browser IDE built with Next.js and Monaco Editor.
+A VS Code-like HTML editor built with Next.js and Monaco Editor. It includes:
+
+- dark IDE layout
+- file explorer
+- tabs
+- live HTML preview
+- "!" + Enter boilerplate generation
+- Emmet-style abbreviation support
+- save/download support
 
 ## Run locally
 
@@ -9,11 +17,8 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000
+Then open http://localhost:3000
 
-## Deploy to Vercel
+## Deploy
 
-1. Push this repo.
-2. Import it in Vercel.
-3. Use the default Next.js settings.
-4. Deploy.
+This project is ready for Vercel deployment.
