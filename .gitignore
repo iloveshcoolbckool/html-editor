@@ -1,7 +1,32 @@
-# .gitignore
-node_modules
-.next
-out
-npm-debug.log*
-.DS_Store
-.vercel
+# Code Studio
+
+A VS Code-like HTML editor built with Next.js and Monaco Editor.
+
+Features:
+- dark IDE layout
+- file explorer and tabs
+- live HTML preview
+- `!` + Enter boilerplate shortcut
+- snippet expansion for HTML-like shortcuts
+- rename, delete, download, and new file support
+- deployable on Vercel
+
+## Run locally
+
+```bash
+npm install
+npm run dev
+```
+
+Then open `http://localhost:3000`.
+
+## Deploying to Vercel
+
+1. Push this repo to GitHub.
+2. Import it in Vercel.
+3. Use the default Next.js settings.
+4. Deploy.
+
+## Notes
+
+This is designed as a browser-based HTML/CSS/JS editor, not a full VS Code clone, but it is designed to feel similar and is ready for Vercel hosting.

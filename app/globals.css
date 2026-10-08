@@ -1,188 +1,438 @@
-html, body {
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import Editor from '@monaco-editor/react';
+
+const defaultFiles = [
+  {
+    id: 'index',
+    name: 'index.html',
+    content: `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Project</title>
+    <style>
+      body {
+        margin: 0;
+        background: #0f172a;
+        color: #f8fafc;
+        font-family: 'Segoe UI', sans-serif;
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+      }
+
+      .card {
+        width: min(680px, 90vw);
+        background: #111827;
+        border: 1px solid #334155;
+        border-radius: 18px;
+        padding: 32px;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+      }
+
+      h1 {
+        margin: 0 0 12px;
+      }
+
+      button {
+        margin-top: 18px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 12px 18px;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Welcome to your editor</h1>
+      <p>Type ! and press Enter for a starter template.</p>
+      <button>Launch</button>
+    </div>
+  </body>
+</html>`,
+  },
+  {
+    id: 'styles',
+    name: 'styles.css',
+    content: `body {
   margin: 0;
-  height: 100%;
-  background: #111827;
-  color: #e5e7eb;
-  font-family: 'Segoe UI', Tahoma, sans-serif;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-button {
-  cursor: pointer;
-}
-
-.ide-shell {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 100vw;
+  font-family: 'Segoe UI', sans-serif;
   background: #0f172a;
+  color: #e2e8f0;
 }
 
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 18px;
-  height: 56px;
-  background: #111827;
-  border-bottom: 1px solid #374151;
+.container {
+  padding: 32px;
 }
 
-.brand {
-  color: #60a5fa;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+.card {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 24px;
+}`,
+  },
+  {
+    id: 'script',
+    name: 'script.js',
+    content: `const button = document.querySelector('button');
+
+if (button) {
+  button.addEventListener('click', () => {
+    alert('Hello from your browser-based IDE!');
+  });
+}`,
+  },
+];
+
+function getLanguage(fileName) {
+  if (fileName.endsWith('.html')) return 'html';
+  if (fileName.endsWith('.css')) return 'css';
+  if (fileName.endsWith('.js')) return 'javascript';
+  if (fileName.endsWith('.json')) return 'json';
+  return 'plaintext';
 }
 
-.top-actions {
-  display: flex;
-  gap: 10px;
+function buildBoilerplate() {
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>Hello, world!</h1>
+  </body>
+</html>`;
 }
 
-.top-actions button {
-  background: #1f2937;
-  color: #e5e7eb;
-  border: 1px solid #374151;
-  border-radius: 8px;
-  padding: 8px 12px;
-}
+function expandSnippet(token) {
+  const trimmed = (token || '').trim();
+  if (!trimmed) return '';
+  if (trimmed === '!') return buildBoilerplate();
 
-.workspace {
-  display: flex;
-  flex: 1;
-  height: calc(100vh - 56px);
-}
-
-.sidebar {
-  width: 240px;
-  background: #111827;
-  border-right: 1px solid #374151;
-  transition: width 0.2s ease;
-}
-
-.sidebar.closed {
-  width: 48px;
-}
-
-.sidebar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 14px;
-  font-size: 12px;
-  text-transform: uppercase;
-  color: #9ca3af;
-  border-bottom: 1px solid #374151;
-}
-
-.sidebar-header button {
-  background: transparent;
-  border: none;
-  color: #e5e7eb;
-  font-size: 18px;
-}
-
-.file-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border-left: 3px solid transparent;
-  cursor: pointer;
-  color: #d1d5db;
-}
-
-.file-item.active {
-  background: #1f2937;
-  border-left-color: #60a5fa;
-}
-
-.file-item:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.delete-btn {
-  background: transparent;
-  border: none;
-  color: #9ca3af;
-  font-size: 20px;
-}
-
-.editor-pane {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: #0b1020;
-}
-
-.tabs {
-  display: flex;
-  align-items: center;
-  height: 42px;
-  padding: 0 8px;
-  background: #111827;
-  border-bottom: 1px solid #374151;
-  gap: 8px;
-}
-
-.tab {
-  background: #1f2937;
-  border: 1px solid #374151;
-  border-bottom: none;
-  color: #d1d5db;
-  padding: 8px 14px;
-  border-radius: 8px 8px 0 0;
-  cursor: pointer;
-}
-
-.active-tab {
-  background: #0b1020;
-  color: #fff;
-}
-
-.editor-row {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-}
-
-.editor-wrap {
-  flex: 1.2;
-  min-width: 0;
-}
-
-.preview-panel {
-  flex: 0.8;
-  border-left: 1px solid #374151;
-  background: #f8fafc;
-  display: flex;
-  flex-direction: column;
-}
-
-.preview-header {
-  height: 42px;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  background: #e2e8f0;
-  color: #111827;
-  font-weight: 700;
-  border-bottom: 1px solid #cbd5e1;
-}
-
-.preview-frame {
-  width: 100%;
-  flex: 1;
-  border: none;
-  background: white;
-}
-
-@media (max-width: 900px) {
-  .preview-panel {
-    display: none;
+  if (/^[a-zA-Z0-9-]+$/.test(trimmed)) {
+    return `<${trimmed}></${trimmed}>`;
   }
+
+  const classMatch = trimmed.match(/^([a-zA-Z0-9-]+)\.([a-zA-Z0-9-_.]+)$/);
+  if (classMatch) {
+    const [, tag, className] = classMatch;
+    return `<${tag} class="${className}"></${tag}>`;
+  }
+
+  const idMatch = trimmed.match(/^([a-zA-Z0-9-]+)#([a-zA-Z0-9-_]+)$/);
+  if (idMatch) {
+    const [, tag, id] = idMatch;
+    return `<${tag} id="${id}"></${tag}>`;
+  }
+
+  if (trimmed === 'ul>li*3') {
+    return '<ul>\n  <li></li>\n  <li></li>\n  <li></li>\n</ul>';
+  }
+
+  if (trimmed.includes('>')) {
+    const [parent, child] = trimmed.split('>');
+    return `<${parent}>\n  <${child}></${child}>\n</${parent}>`;
+  }
+
+  return trimmed;
+}
+
+export default function Home() {
+  const [files, setFiles] = useState(defaultFiles);
+  const [activeFileId, setActiveFileId] = useState('index');
+  const [previewVisible, setPreviewVisible] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const activeFile = useMemo(
+    () => files.find((file) => file.id === activeFileId) || files[0],
+    [files, activeFileId]
+  );
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('code-studio-files');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setFiles(parsed);
+          setActiveFileId(parsed[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Could not restore stored files:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('code-studio-files', JSON.stringify(files));
+  }, [files]);
+
+  const filteredFiles = files.filter((file) =>
+    file.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const updateActiveFile = (nextValue) => {
+    setFiles((current) =>
+      current.map((file) =>
+        file.id === activeFileId ? { ...file, content: nextValue ?? '' } : file
+      )
+    );
+  };
+
+  const createFile = (customName = '') => {
+    const nextId = `file-${Date.now()}`;
+    const name = customName || `untitled-${files.length + 1}.html`;
+    const newFile = {
+      id: nextId,
+      name,
+      content: '<!-- new file -->\n<div class="example">Hello</div>',
+    };
+
+    setFiles((current) => [...current, newFile]);
+    setActiveFileId(nextId);
+  };
+
+  const renameFile = (id) => {
+    const file = files.find((item) => item.id === id);
+    if (!file) return;
+
+    const nextName = window.prompt('Rename file:', file.name);
+    if (!nextName || !nextName.trim()) return;
+
+    setFiles((current) =>
+      current.map((item) =>
+        item.id === id ? { ...item, name: nextName.trim() } : item
+      )
+    );
+  };
+
+  const deleteFile = (id) => {
+    if (files.length === 1) return;
+    const nextFiles = files.filter((file) => file.id !== id);
+    setFiles(nextFiles);
+    if (activeFileId === id) setActiveFileId(nextFiles[0].id);
+  };
+
+  const downloadFile = () => {
+    if (!activeFile) return;
+    const blob = new Blob([activeFile.content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = activeFile.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleEditorMount = (editor, monaco) => {
+    editor.onKeyDown((event) => {
+      const model = editor.getModel();
+      const position = editor.getPosition();
+      const line = model.getLineContent(position.lineNumber);
+      const beforeCursor = line.slice(0, position.column - 1);
+
+      if (event.keyCode === monaco.KeyCode.Enter && beforeCursor.trim() === '!') {
+        event.preventDefault();
+        const fullRange = new monaco.Range(
+          position.lineNumber,
+          1,
+          position.lineNumber,
+          beforeCursor.length + 1
+        );
+
+        editor.executeEdits('boilerplate', [
+          {
+            range: fullRange,
+            text: buildBoilerplate(),
+          },
+        ]);
+        return;
+      }
+
+      if (event.keyCode === monaco.KeyCode.Tab) {
+        const currentLine = model.getLineContent(position.lineNumber);
+        const lineBeforeCursor = currentLine.slice(0, position.column - 1);
+        const lastToken = lineBeforeCursor.split(/\s+/).pop() || '';
+
+        if (lastToken) {
+          const expanded = expandSnippet(lastToken);
+          if (expanded && expanded !== lastToken) {
+            event.preventDefault();
+            const startColumn = position.column - lastToken.length;
+            const range = new monaco.Range(
+              position.lineNumber,
+              startColumn,
+              position.lineNumber,
+              position.column
+            );
+
+            editor.executeEdits('emmet', [{ range, text: expanded }]);
+          }
+        }
+      }
+    });
+  };
+
+  const previewDocument = useMemo(() => {
+    if (!activeFile) {
+      return '<!DOCTYPE html><html><body></body></html>';
+    }
+
+    if (activeFile.name.endsWith('.html')) {
+      return activeFile.content;
+    }
+
+    if (activeFile.name.endsWith('.css')) {
+      return `<!DOCTYPE html>
+        <html>
+          <head>
+            <style>${activeFile.content}</style>
+          </head>
+          <body>
+            <div style="padding: 32px; font-family: Arial, sans-serif; color: #e2e8f0; background: #0f172a; min-height: 100vh;">
+              <h1 style="margin: 0 0 12px;">CSS Preview</h1>
+              <div style="background: #111827; border-radius: 12px; padding: 24px; border: 1px solid #334155;">
+                Previewing CSS styles.
+              </div>
+            </div>
+          </body>
+        </html>`;
+    }
+
+    if (activeFile.name.endsWith('.js')) {
+      return `<!DOCTYPE html>
+        <html>
+          <body>
+            <script>${activeFile.content}</script>
+            <h1>JavaScript preview</h1>
+          </body>
+        </html>`;
+    }
+
+    return activeFile.content;
+  }, [activeFile]);
+
+  return (
+    <div className="ide-shell">
+      <header className="topbar">
+        <div className="brand-group">
+          <span className="brand-dot" />
+          <span>Code Studio</span>
+        </div>
+
+        <div className="toolbar">
+          <button onClick={() => createFile()}>New File</button>
+          <button onClick={() => renameFile(activeFile.id)}>Rename</button>
+          <button onClick={downloadFile}>Download</button>
+          <button onClick={() => setPreviewVisible((value) => !value)}>
+            {previewVisible ? 'Hide Preview' : 'Show Preview'}
+          </button>
+        </div>
+      </header>
+
+      <div className="workspace">
+        <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+          <div className="sidebar-header">
+            <span>Explorer</span>
+            <button onClick={() => setSidebarCollapsed((value) => !value)}>
+              {sidebarCollapsed ? '›' : '☰'}
+            </button>
+          </div>
+
+          <div className="search-box">
+            <input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search files"
+            />
+          </div>
+
+          <div className="file-list">
+            {filteredFiles.map((file) => (
+              <div
+                key={file.id}
+                className={`file-item ${file.id === activeFile.id ? 'active' : ''}`}
+                onClick={() => setActiveFileId(file.id)}
+              >
+                <span className="file-name">{file.name}</span>
+                <button
+                  className="delete-file"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    deleteFile(file.id);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        <main className="main-panel">
+          <div className="tabs">
+            {files.map((file) => (
+              <div
+                key={file.id}
+                className={`tab ${file.id === activeFile.id ? 'active-tab' : ''}`}
+                onClick={() => setActiveFileId(file.id)}
+              >
+                {file.name}
+                <button
+                  className="tab-close"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    deleteFile(file.id);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="editor-layout">
+            <div className="editor-pane">
+              <Editor
+                theme="vs-dark"
+                language={getLanguage(activeFile.name)}
+                value={activeFile.content}
+                onChange={updateActiveFile}
+                onMount={handleEditorMount}
+                options={{
+                  minimap: { enabled: false },
+                  wordWrap: 'on',
+                  smoothScrolling: true,
+                  scrollBeyondLastLine: false,
+                  fontSize: 14,
+                  automaticLayout: true,
+                  tabSize: 2,
+                  formatOnPaste: true,
+                  formatOnType: true,
+                }}
+              />
+            </div>
+
+            {previewVisible && (
+              <div className="preview-pane">
+                <div className="preview-header">Preview</div>
+                <iframe title="browser-preview" className="preview-frame" srcDoc={previewDocument} />
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
 }

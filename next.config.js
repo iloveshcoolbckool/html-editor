@@ -1,9 +1,8 @@
-module.exports = {
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...(config.resolve.alias || {}),
-      '@': __dirname,
-    };
-    return config;
+const nextConfig = {
+  reactStrictMode: true,
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 };
+
+module.exports = nextConfig;
