@@ -14,23 +14,33 @@ const defaultFiles = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Project</title>
     <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --soft: #1e293b;
+        --line: #334155;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --accent: #60a5fa;
+      }
+
       body {
         margin: 0;
-        background: #0f172a;
-        color: #f8fafc;
-        font-family: 'Segoe UI', sans-serif;
+        min-height: 100vh;
         display: grid;
         place-items: center;
-        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Segoe UI', sans-serif;
       }
 
       .card {
-        width: min(680px, 90vw);
-        background: #111827;
-        border: 1px solid #334155;
+        width: min(720px, 90vw);
+        background: var(--panel);
+        border: 1px solid var(--line);
         border-radius: 18px;
         padding: 32px;
-        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
       }
 
       h1 {
@@ -38,10 +48,10 @@ const defaultFiles = [
       }
 
       button {
-        margin-top: 18px;
-        background: #2563eb;
-        color: white;
+        margin-top: 16px;
+        background: var(--accent);
         border: none;
+        color: white;
         padding: 12px 18px;
         border-radius: 10px;
         cursor: pointer;
@@ -84,10 +94,15 @@ const defaultFiles = [
 
 if (button) {
   button.addEventListener('click', () => {
-    alert('Hello from your browser-based IDE!');
+    alert('Hello from your browser IDE!');
   });
 }`,
   },
+];
+
+const initialTerminal = [
+  'Code Studio ready',
+  'Type help to see terminal commands',
 ];
 
 function getLanguage(fileName) {
@@ -151,6 +166,9 @@ export default function Home() {
   const [previewVisible, setPreviewVisible] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [terminalOpen, setTerminalOpen] = useState(true);
+  const [terminalInput, setTerminalInput] = useState('');
+  const [terminalHistory, setTerminalHistory] = useState(initialTerminal);
 
   const activeFile = useMemo(
     () => files.find((file) => file.id === activeFileId) || files[0],
@@ -168,7 +186,7 @@ export default function Home() {
         }
       }
     } catch (error) {
-      console.error('Could not restore stored files:', error);
+      console.error('Could not restore files from local storage:', error);
     }
   }, []);
 
@@ -323,6 +341,44 @@ export default function Home() {
     return activeFile.content;
   }, [activeFile]);
 
+  const handleTerminalSubmit = () => {
+    const command = terminalInput.trim();
+    if (!command) return;
+
+    let output = [];
+    const lower = command.toLowerCase();
+
+    if (lower === 'help') {
+      output = [
+        'Available commands:',
+        'help - show commands',
+        'ls - list files',
+        'clear - clear terminal',
+        'open index.html - open a file',
+      ];
+    } else if (lower === 'ls') {
+      output = files.map((file) => file.name);
+    } else if (lower === 'clear') {
+      setTerminalHistory([]);
+      setTerminalInput('');
+      return;
+    } else if (lower.startsWith('open ')) {
+      const target = lower.replace('open ', '').trim();
+      const match = files.find((file) => file.name.toLowerCase() === target);
+      if (match) {
+        setActiveFileId(match.id);
+        output = [`Opened ${match.name}`];
+      } else {
+        output = [`File not found: ${target}`];
+      }
+    } else {
+      output = [`Command not found: ${command}`];
+    }
+
+    setTerminalHistory((current) => [...current, `$ ${command}`, ...output]);
+    setTerminalInput('');
+  };
+
   return (
     <div className="ide-shell">
       <header className="topbar">
@@ -338,6 +394,9 @@ export default function Home() {
           <button onClick={() => setPreviewVisible((value) => !value)}>
             {previewVisible ? 'Hide Preview' : 'Show Preview'}
           </button>
+          <button onClick={() => setTerminalOpen((value) => !value)}>
+            {terminalOpen ? 'Hide Terminal' : 'Show Terminal'}
+          </button>
         </div>
       </header>
 
@@ -352,6 +411,7 @@ export default function Home() {
 
           <div className="search-box">
             <input
+              aria-label="Search files"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search files"
@@ -431,6 +491,33 @@ export default function Home() {
               </div>
             )}
           </div>
+
+          {terminalOpen && (
+            <div className="terminal-panel">
+              <div className="terminal-header">Terminal</div>
+              <div className="terminal-output">
+                {terminalHistory.map((line, index) => (
+                  <div key={`${line}-${index}`} className="terminal-line">
+                    {line}
+                  </div>
+                ))}
+              </div>
+              <div className="terminal-input-row">
+                <span className="terminal-prompt">$</span>
+                <input
+                  aria-label="Terminal command"
+                  value={terminalInput}
+                  onChange={(event) => setTerminalInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      handleTerminalSubmit();
+                    }
+                  }}
+                  placeholder="Type a command"
+                />
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

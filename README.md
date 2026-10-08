@@ -2,7 +2,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background: #0f172a;
+  background: #0b1020;
   color: #e2e8f0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -257,6 +257,63 @@ button {
   width: 100%;
   border: none;
   background: white;
+}
+
+.terminal-panel {
+  border-top: 1px solid #1f2937;
+  background: #0b1020;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  background: #111827;
+  border-bottom: 1px solid #1f2937;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+}
+
+.terminal-output {
+  flex: 1;
+  overflow: auto;
+  padding: 10px 12px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.terminal-line {
+  margin-bottom: 4px;
+  white-space: pre-wrap;
+}
+
+.terminal-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 12px;
+  border-top: 1px solid #1f2937;
+  background: #111827;
+}
+
+.terminal-prompt {
+  color: #22c55e;
+  font-weight: 700;
+}
+
+.terminal-input-row input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f8fafc;
 }
 
 @media (max-width: 900px) {
